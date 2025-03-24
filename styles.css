@@ -1,37 +1,37 @@
 /* Скрытие прогресс-бара и временных меток */
-.ytp-progress-bar-container,
-.ytp-time-display,
-.ytp-progress-bar,
-.ytp-time-duration,
-.ytp-time-current,
-.ytp-time-separator,
-.ytp-chapters-container {
+.youtube-hider-enabled .ytp-progress-bar-container,
+.youtube-hider-enabled .ytp-time-display,
+.youtube-hider-enabled .ytp-progress-bar,
+.youtube-hider-enabled .ytp-time-duration,
+.youtube-hider-enabled .ytp-time-current,
+.youtube-hider-enabled .ytp-time-separator,
+.youtube-hider-enabled .ytp-chapters-container {
     display: none !important;
 }
 
 /* Скрытие длительности видео в превью */
-ytd-thumbnail-overlay-time-status-renderer,
-ytd-video-duration-renderer,
-ytd-thumbnail-overlay-hover-text-renderer {
+.youtube-hider-enabled ytd-thumbnail-overlay-time-status-renderer,
+.youtube-hider-enabled ytd-video-duration-renderer,
+.youtube-hider-enabled ytd-thumbnail-overlay-hover-text-renderer {
     display: none !important;
 }
 
 /* Скрытие временных меток в описании видео */
-ytd-text-inline-expander yt-formatted-string a[href*="&t="] {
+.youtube-hider-enabled ytd-text-inline-expander yt-formatted-string a[href*="&t="] {
     display: none !important;
 }
 
 /* Скрытие временных меток в комментариях */
-ytd-comment-renderer a[href*="&t="] {
+.youtube-hider-enabled ytd-comment-renderer a[href*="&t="] {
     display: none !important;
 }
 
 /* Скрытие индикатора прогресса в плейлисте */
-ytd-playlist-panel-video-renderer #progress {
+.youtube-hider-enabled ytd-playlist-panel-video-renderer #progress {
     display: none !important;
 }
 
 /* Скрытие временных меток в мини-плеере */
-.ytp-miniplayer-time-display {
+.youtube-hider-enabled .ytp-miniplayer-time-display {
     display: none !important;
 } 

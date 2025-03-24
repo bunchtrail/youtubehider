@@ -4,7 +4,8 @@ chrome.runtime.onInstalled.addListener(() => {
     chrome.storage.local.set({
         skipTime: 10,
         enableSoundFeedback: true,
-        enableGestures: true
+        enableGestures: true,
+        extensionEnabled: true
     });
 });
 
