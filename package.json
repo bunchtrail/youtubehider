@@ -1,0 +1,11 @@
+{
+  "name": "youtube-stream-mode",
+  "version": "1.0.0",
+  "description": "Chrome extension for hiding YouTube video duration and progress bar",
+  "scripts": {
+    "generate-icons": "node generate-icons.js"
+  },
+  "dependencies": {
+    "canvas": "^2.11.2"
+  }
+} 
