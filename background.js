@@ -5,7 +5,10 @@ chrome.runtime.onInstalled.addListener(() => {
         skipTime: 10,
         enableSoundFeedback: true,
         enableGestures: true,
-        extensionEnabled: true
+        extensionEnabled: true,
+        showProgressPadding: false,
+        progressPaddingColor: '#ff0000',
+        progressPaddingOpacity: 0.7
     });
 });
 
@@ -20,6 +23,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     
     if (request.type === 'updateConfig') {
         chrome.storage.local.set(request.config, () => {
+            // Отправка сообщения всем активным вкладкам о обновлении настроек
+            chrome.tabs.query({}, (tabs) => {
+                tabs.forEach(tab => {
+                    chrome.tabs.sendMessage(tab.id, {
+                        type: 'configUpdated',
+                        config: request.config
+                    }).catch(() => {
+                        // Игнорируем ошибки для вкладок, где content script не активен
+                    });
+                });
+            });
             sendResponse({ success: true });
         });
         return true;

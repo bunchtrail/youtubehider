@@ -3,26 +3,117 @@ const DEFAULT_CONFIG = {
     skipTime: 10, // секунды для перемотки
     enableSoundFeedback: true,
     enableGestures: true,
-    extensionEnabled: true
+    extensionEnabled: true,
+    showProgressPadding: false, // новая опция
+    progressPaddingColor: '#ff0000', // цвет заполнения
+    progressPaddingOpacity: 0.7 // прозрачность
 };
 
 // Состояние расширения
 let config = { ...DEFAULT_CONFIG };
 let video = null;
+let preventUpdate = false; // Флаг для предотвращения обновления во время взаимодействия
 
-// Загрузка конфигурации из storage
+// Загрузка конфигурации с использованием LiveStorage
 function loadConfig() {
-    chrome.storage.local.get(null, (storedConfig) => {
-        config = { ...DEFAULT_CONFIG, ...storedConfig };
+    // Убедимся, что LiveStorage инициализирован и загружен
+    if (typeof LiveStorage !== 'undefined') {
+        LiveStorage.load().then(() => {
+            // Объединяем значения по умолчанию с данными из LiveStorage
+            config = { ...DEFAULT_CONFIG, ...LiveStorage.local };
+            
+            // Если расширение выключено, удаляем CSS-классы и отключаем функциональность
+            if (config.extensionEnabled === false) {
+                document.documentElement.classList.remove('youtube-hider-enabled');
+            } else {
+                document.documentElement.classList.add('youtube-hider-enabled');
+                init();
+            }
+            
+            // Применяем настройки прогресс-бара независимо от состояния расширения
+            if (config.showProgressPadding) {
+                setupProgressPadding();
+            }
+        });
+    } else {
+        // Запасной вариант, если LiveStorage не доступен
+        chrome.storage.local.get(null, (storedConfig) => {
+            config = { ...DEFAULT_CONFIG, ...storedConfig };
+            
+            if (config.extensionEnabled === false) {
+                document.documentElement.classList.remove('youtube-hider-enabled');
+            } else {
+                document.documentElement.classList.add('youtube-hider-enabled');
+                init();
+            }
+            
+            if (config.showProgressPadding) {
+                setupProgressPadding();
+            }
+        });
+    }
+}
+
+// Добавляем обработчик сообщений для прямого обновления настроек
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.type === 'configUpdated') {
+        // Пропускаем обновление, если пользователь взаимодействует с интерфейсом
+        if (preventUpdate) {
+            sendResponse({ success: false, reason: 'user-interaction-in-progress' });
+            return true;
+        }
+
+        // Обновляем конфигурацию немедленно
+        const changes = {};
+        Object.keys(request.config).forEach(key => {
+            changes[key] = { newValue: request.config[key] };
+            config[key] = request.config[key]; // Обновляем локальную копию конфигурации
+            
+            // Также обновляем LiveStorage, если он доступен
+            if (typeof LiveStorage !== 'undefined') {
+                LiveStorage.local[key] = request.config[key];
+            }
+        });
         
-        // Если расширение выключено, удаляем CSS-классы и отключаем функциональность
-        if (config.extensionEnabled === false) {
+        // Обрабатываем изменения так же, как при обычном обновлении через storage
+        handleConfigChanges(changes);
+        
+        sendResponse({ success: true });
+        return true;
+    }
+});
+
+// Выделяем обработку изменений настроек в отдельную функцию для переиспользования
+function handleConfigChanges(changes) {
+    // Пропускаем обновление, если пользователь взаимодействует с интерфейсом
+    if (preventUpdate) {
+        return;
+    }
+    
+    // Проверяем состояние расширения
+    if ('extensionEnabled' in changes) {
+        if (changes.extensionEnabled.newValue === false) {
+            // Если расширение выключили
             document.documentElement.classList.remove('youtube-hider-enabled');
+            removeListeners();
         } else {
+            // Если расширение включили
             document.documentElement.classList.add('youtube-hider-enabled');
             init();
         }
-    });
+    }
+    
+    // Обработка изменений настроек прогресс-бара
+    if ('showProgressPadding' in changes) {
+        if (changes.showProgressPadding.newValue) {
+            setupProgressPadding();
+        } else {
+            removeProgressPadding();
+        }
+    } else if (config.showProgressPadding && 
+              ('progressPaddingColor' in changes || 'progressPaddingOpacity' in changes)) {
+        setupProgressPadding();
+    }
 }
 
 // Слушаем изменения конфигурации
@@ -33,20 +124,98 @@ chrome.storage.onChanged.addListener((changes, area) => {
             config[key] = changes[key].newValue;
         });
         
-        // Проверяем состояние расширения
-        if ('extensionEnabled' in changes) {
-            if (changes.extensionEnabled.newValue === false) {
-                // Если расширение выключили
-                document.documentElement.classList.remove('youtube-hider-enabled');
-                removeListeners();
-            } else {
-                // Если расширение включили
-                document.documentElement.classList.add('youtube-hider-enabled');
-                init();
-            }
-        }
+        // Используем выделенную функцию обработки изменений
+        handleConfigChanges(changes);
     }
 });
+
+// Предотвращаем обновление при взаимодействии пользователя
+document.addEventListener('mouseenter', () => {
+    preventUpdate = true;
+});
+
+document.addEventListener('mouseleave', () => {
+    preventUpdate = false;
+});
+
+// Функция для настройки прогресс-бара padding
+function setupProgressPadding() {
+    // Добавляем атрибут для CSS
+    document.documentElement.setAttribute('data-show-padding', 'true');
+    
+    const modifyProgressPadding = () => {
+        const paddingElements = document.querySelectorAll('.ytp-progress-bar-padding');
+        paddingElements.forEach(paddingElement => {
+            if (paddingElement) {
+                // Установка стилей для постоянного отображения
+                paddingElement.style.display = 'block';
+                paddingElement.style.backgroundColor = config.progressPaddingColor;
+                paddingElement.style.height = '100%';
+                paddingElement.style.width = '100%';
+                paddingElement.style.opacity = config.progressPaddingOpacity.toString();
+                paddingElement.style.position = 'absolute';
+                paddingElement.style.bottom = '0px';
+                paddingElement.style.zIndex = '60';
+            }
+        });
+    };
+
+    // Выполняем сразу при вызове функции
+    modifyProgressPadding();
+    
+    // Также создаем стиль для случаев, когда элементы динамически добавляются
+    const styleId = 'youtube-padding-style';
+    if (!document.getElementById(styleId)) {
+        const styleElement = document.createElement('style');
+        styleElement.id = styleId;
+        styleElement.textContent = `
+            .ytp-progress-bar-padding {
+                display: block !important;
+                background-color: ${config.progressPaddingColor} !important;
+                height: 100% !important;
+                width: 100% !important;
+                opacity: ${config.progressPaddingOpacity} !important;
+                position: absolute !important;
+                bottom: 0px !important;
+                z-index: 60 !important;
+            }
+        `;
+        document.head.appendChild(styleElement);
+    } else {
+        const styleElement = document.getElementById(styleId);
+        styleElement.textContent = `
+            .ytp-progress-bar-padding {
+                display: block !important;
+                background-color: ${config.progressPaddingColor} !important;
+                height: 100% !important;
+                width: 100% !important;
+                opacity: ${config.progressPaddingOpacity} !important;
+                position: absolute !important;
+                bottom: 0px !important;
+                z-index: 60 !important;
+            }
+        `;
+    }
+}
+
+// Функция для удаления стилей прогресс-бара
+function removeProgressPadding() {
+    // Удаляем атрибут для CSS
+    document.documentElement.removeAttribute('data-show-padding');
+    
+    const styleElement = document.getElementById('youtube-padding-style');
+    if (styleElement) {
+        styleElement.remove();
+    }
+    
+    // Сбрасываем стили для всех элементов
+    const paddingElements = document.querySelectorAll('.ytp-progress-bar-padding');
+    paddingElements.forEach(paddingElement => {
+        if (paddingElement) {
+            paddingElement.style = '';
+        }
+    });
+}
 
 // Удаление слушателей событий
 function removeListeners() {
@@ -156,13 +325,20 @@ function playFeedbackSound(type) {
 }
 
 // Наблюдатель за изменениями DOM
-const observer = new MutationObserver(() => {
+const observer = new MutationObserver((mutations) => {
     if (!document.querySelector('video')) {
         init();
     }
+    
+    if (config.showProgressPadding && document.location.pathname.includes('/watch')) {
+        const paddingElements = document.querySelectorAll('.ytp-progress-bar-padding');
+        if (paddingElements.length > 0) {
+            setupProgressPadding();
+        }
+    }
 });
 
-observer.observe(document.body, {
+observer.observe(document, {
     childList: true,
     subtree: true
 });

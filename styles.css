@@ -9,6 +9,11 @@
     display: none !important;
 }
 
+/* При включении отображения padding прогресс-бара, показываем контейнер */
+.youtube-hider-enabled[data-show-padding="true"] .ytp-progress-bar-container {
+    display: block !important;
+}
+
 /* Скрытие длительности видео в превью */
 .youtube-hider-enabled ytd-thumbnail-overlay-time-status-renderer,
 .youtube-hider-enabled ytd-video-duration-renderer,
