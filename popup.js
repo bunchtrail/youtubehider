@@ -21,65 +21,71 @@ function updateUI() {
     }, 500);
 }
 
-// Загрузка настроек при открытии popup
-document.addEventListener('DOMContentLoaded', () => {
-    // Инициализация LiveStorage
-    LiveStorage.load().then(() => {
-        // Установка настроек из LiveStorage
-        const skipTimeElement = document.getElementById('skipTime');
-        const enabledElement = document.getElementById('extensionEnabled');
-        
-        skipTimeElement.value = LiveStorage.local.skipTime || 10;
-        enabledElement.checked = LiveStorage.local.extensionEnabled !== false;
-        
-        // Обновление интерфейса в соответствии с загруженными настройками
-        updateUI();
-    });
-});
+// Функция для отправки сообщения на активную вкладку
+async function sendMessageToActiveTab(message) {
+    try {
+        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tabs || tabs.length === 0) {
+            console.log('Активная вкладка не найдена');
+            return;
+        }
+
+        const activeTab = tabs[0];
+        // Проверяем, что это вкладка YouTube
+        if (!activeTab.url || !activeTab.url.includes('youtube.com')) {
+            console.log('Активная вкладка не является YouTube');
+            return;
+        }
+
+        await chrome.tabs.sendMessage(activeTab.id, message);
+    } catch (error) {
+        console.log('Ошибка при отправке сообщения:', error.message);
+    }
+}
 
 // Сохранение настроек при изменении
-function saveConfig() {
+async function saveConfig() {
     // Обновление интерфейса
     updateUI();
     
     // Прямое обновление LiveStorage объекта
-    LiveStorage.local.skipTime = parseInt(document.getElementById('skipTime').value);
     LiveStorage.local.extensionEnabled = document.getElementById('extensionEnabled').checked;
     
-    console.log('Новые настройки:', {
-        skipTime: LiveStorage.local.skipTime,
-        extensionEnabled: LiveStorage.local.extensionEnabled
-    });
-    
-    // Передача настроек в background script
     const config = {
-        skipTime: LiveStorage.local.skipTime,
         extensionEnabled: LiveStorage.local.extensionEnabled
     };
 
-    // Находим активную вкладку для прямого применения настроек
-    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-        if (tabs && tabs.length > 0) {
-            console.log('Отправка настроек активной вкладке', tabs[0].id);
-            // Прямое сообщение активной вкладке для мгновенного применения
-            try {
-                chrome.tabs.sendMessage(tabs[0].id, {
-                    type: 'configUpdated',
-                    config: config
-                }, (response) => {
-                    if (chrome.runtime.lastError) {
-                        console.error('Ошибка отправки сообщения:', chrome.runtime.lastError.message);
-                        return;
-                    }
-                    console.log('Ответ от content-script:', response);
-                });
-            } catch (err) {
-                console.error('Ошибка отправки сообщения:', err);
-            }
-        }
+    console.log('Новые настройки:', config);
+    
+    // Отправляем сообщение в content script
+    await sendMessageToActiveTab({
+        type: 'configUpdated',
+        config: config
     });
 }
 
-// Добавление обработчиков событий
-document.getElementById('skipTime').addEventListener('change', saveConfig);
-document.getElementById('extensionEnabled').addEventListener('change', saveConfig); 
+// Инициализация при загрузке popup
+window.addEventListener('load', async () => {
+    try {
+        // Ждем загрузки LiveStorage
+        await LiveStorage.load();
+        
+        // Получаем элементы после полной загрузки DOM
+        const enabledElement = document.getElementById('extensionEnabled');
+        
+        if (!enabledElement) {
+            throw new Error('Не удалось найти необходимые элементы интерфейса');
+        }
+
+        // Устанавливаем начальные значения
+        enabledElement.checked = LiveStorage.local.extensionEnabled !== false;
+        
+        // Обновляем UI и добавляем обработчики событий
+        updateUI();
+        enabledElement.addEventListener('change', saveConfig);
+        
+    } catch (error) {
+        console.error('Ошибка инициализации:', error);
+        document.getElementById('statusMessage').textContent = 'Ошибка инициализации расширения';
+    }
+}); 

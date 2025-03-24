@@ -3,7 +3,6 @@ chrome.runtime.onInstalled.addListener(() => {
     console.log('Расширение установлено, устанавливаем начальные настройки');
     // Установка начальных настроек
     chrome.storage.local.set({
-        skipTime: 10,
         extensionEnabled: true
     }, () => {
         console.log('Начальные настройки установлены');
@@ -51,5 +50,42 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             sendResponse({ success: true });
         });
         return true;
+    }
+});
+
+// Обработка горячих клавиш
+chrome.commands.onCommand.addListener(async (command) => {
+    console.log('Получена команда:', command);
+    
+    const config = await chrome.storage.local.get(null);
+    
+    switch (command) {
+        case 'toggle-stream-mode':
+            const newEnabled = !config.extensionEnabled;
+            await chrome.storage.local.set({ extensionEnabled: newEnabled });
+            // Отправляем обновление на все вкладки
+            chrome.tabs.query({}, (tabs) => {
+                tabs.forEach(tab => {
+                    chrome.tabs.sendMessage(tab.id, {
+                        type: 'configUpdated',
+                        config: { ...config, extensionEnabled: newEnabled }
+                    }).catch(console.error);
+                });
+            });
+            break;
+            
+        case 'toggle-progress-bar':
+            const newProgressBarState = !config.hideProgressBar;
+            await chrome.storage.local.set({ hideProgressBar: newProgressBarState });
+            // Отправляем обновление на все вкладки
+            chrome.tabs.query({}, (tabs) => {
+                tabs.forEach(tab => {
+                    chrome.tabs.sendMessage(tab.id, {
+                        type: 'configUpdated',
+                        config: { ...config, hideProgressBar: newProgressBarState }
+                    }).catch(console.error);
+                });
+            });
+            break;
     }
 }); 

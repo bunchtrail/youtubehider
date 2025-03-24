@@ -1,6 +1,5 @@
 // Конфигурация по умолчанию
 const DEFAULT_CONFIG = {
-    skipTime: 10, // секунды для перемотки
     extensionEnabled: true
 };
 
@@ -150,8 +149,6 @@ function init() {
         setTimeout(init, 1000);
         return;
     }
-
-    setupKeyboardControls();
 }
 
 // Настройка клавиатурных сочетаний

@@ -1,6 +1,6 @@
 - **youtubehider** `(d:\Projects\chrome-extensions\youtubehider)`
-  - `background.js` (2.7 KB)
-  - `content-script.js` (7.7 KB)
+  - `background.js` (4.2 KB)
+  - `content-script.js` (7.6 KB)
   - **docs** `(d:\Projects\chrome-extensions\youtubehider\docs)`
     - `Структура_youtubehider_от_24-03-2025.md` (663.0 B)
   - `generate-icons.js` (1.3 KB)
@@ -9,10 +9,10 @@
     - `icon16.png` (422.0 B)
     - `icon48.png` (1.3 KB)
   - `live-storage.js` (2.9 KB)
-  - `manifest.json` (1003.0 B)
+  - `manifest.json` (1.4 KB)
   - `package.json` (272.0 B)
   - `popup.css` (4.3 KB)
-  - `popup.html` (2.4 KB)
-  - `popup.js` (3.9 KB)
+  - `popup.html` (1.7 KB)
+  - `popup.js` (3.7 KB)
   - `README.md` (2.4 KB)
   - `styles.css` (1.7 KB)
