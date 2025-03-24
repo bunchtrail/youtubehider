@@ -1,12 +1,7 @@
 // Конфигурация по умолчанию
 const DEFAULT_CONFIG = {
     skipTime: 10, // секунды для перемотки
-    enableSoundFeedback: true,
-    enableGestures: true,
-    extensionEnabled: true,
-    showProgressPadding: false, // новая опция
-    progressPaddingColor: '#ff0000', // цвет заполнения
-    progressPaddingOpacity: 0.7 // прозрачность
+    extensionEnabled: true
 };
 
 // Состояние расширения
@@ -29,11 +24,6 @@ function loadConfig() {
                 document.documentElement.classList.add('youtube-hider-enabled');
                 init();
             }
-            
-            // Применяем настройки прогресс-бара независимо от состояния расширения
-            if (config.showProgressPadding) {
-                setupProgressPadding();
-            }
         });
     } else {
         // Запасной вариант, если LiveStorage не доступен
@@ -46,22 +36,23 @@ function loadConfig() {
                 document.documentElement.classList.add('youtube-hider-enabled');
                 init();
             }
-            
-            if (config.showProgressPadding) {
-                setupProgressPadding();
-            }
         });
     }
 }
 
 // Добавляем обработчик сообщений для прямого обновления настроек
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    console.log('Получено сообщение:', request);
+    
     if (request.type === 'configUpdated') {
         // Пропускаем обновление, если пользователь взаимодействует с интерфейсом
         if (preventUpdate) {
+            console.log('Обновление пропущено из-за взаимодействия пользователя');
             sendResponse({ success: false, reason: 'user-interaction-in-progress' });
             return true;
         }
+
+        console.log('Обновление конфигурации:', request.config);
 
         // Обновляем конфигурацию немедленно
         const changes = {};
@@ -75,44 +66,45 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             }
         });
         
+        console.log('Применяем изменения конфигурации');
         // Обрабатываем изменения так же, как при обычном обновлении через storage
         handleConfigChanges(changes);
         
-        sendResponse({ success: true });
+        // Обязательно отправляем ответ
+        sendResponse({ success: true, applied: true });
         return true;
     }
+    
+    // Если это не configUpdated, все равно отправляем ответ, чтобы избежать ошибок связи
+    sendResponse({ success: false, reason: 'unknown-message-type' });
+    return true;
 });
 
 // Выделяем обработку изменений настроек в отдельную функцию для переиспользования
 function handleConfigChanges(changes) {
+    console.log('Обработка изменений:', changes);
+    
     // Пропускаем обновление, если пользователь взаимодействует с интерфейсом
     if (preventUpdate) {
+        console.log('Обработка пропущена из-за взаимодействия пользователя');
         return;
     }
     
     // Проверяем состояние расширения
     if ('extensionEnabled' in changes) {
+        console.log('Изменение состояния расширения:', changes.extensionEnabled.newValue);
+        
         if (changes.extensionEnabled.newValue === false) {
             // Если расширение выключили
+            console.log('Выключение расширения');
             document.documentElement.classList.remove('youtube-hider-enabled');
             removeListeners();
         } else {
             // Если расширение включили
+            console.log('Включение расширения');
             document.documentElement.classList.add('youtube-hider-enabled');
             init();
         }
-    }
-    
-    // Обработка изменений настроек прогресс-бара
-    if ('showProgressPadding' in changes) {
-        if (changes.showProgressPadding.newValue) {
-            setupProgressPadding();
-        } else {
-            removeProgressPadding();
-        }
-    } else if (config.showProgressPadding && 
-              ('progressPaddingColor' in changes || 'progressPaddingOpacity' in changes)) {
-        setupProgressPadding();
     }
 }
 
@@ -138,85 +130,6 @@ document.addEventListener('mouseleave', () => {
     preventUpdate = false;
 });
 
-// Функция для настройки прогресс-бара padding
-function setupProgressPadding() {
-    // Добавляем атрибут для CSS
-    document.documentElement.setAttribute('data-show-padding', 'true');
-    
-    const modifyProgressPadding = () => {
-        const paddingElements = document.querySelectorAll('.ytp-progress-bar-padding');
-        paddingElements.forEach(paddingElement => {
-            if (paddingElement) {
-                // Установка стилей для постоянного отображения
-                paddingElement.style.display = 'block';
-                paddingElement.style.backgroundColor = config.progressPaddingColor;
-                paddingElement.style.height = '100%';
-                paddingElement.style.width = '100%';
-                paddingElement.style.opacity = config.progressPaddingOpacity.toString();
-                paddingElement.style.position = 'absolute';
-                paddingElement.style.bottom = '0px';
-                paddingElement.style.zIndex = '60';
-            }
-        });
-    };
-
-    // Выполняем сразу при вызове функции
-    modifyProgressPadding();
-    
-    // Также создаем стиль для случаев, когда элементы динамически добавляются
-    const styleId = 'youtube-padding-style';
-    if (!document.getElementById(styleId)) {
-        const styleElement = document.createElement('style');
-        styleElement.id = styleId;
-        styleElement.textContent = `
-            .ytp-progress-bar-padding {
-                display: block !important;
-                background-color: ${config.progressPaddingColor} !important;
-                height: 100% !important;
-                width: 100% !important;
-                opacity: ${config.progressPaddingOpacity} !important;
-                position: absolute !important;
-                bottom: 0px !important;
-                z-index: 60 !important;
-            }
-        `;
-        document.head.appendChild(styleElement);
-    } else {
-        const styleElement = document.getElementById(styleId);
-        styleElement.textContent = `
-            .ytp-progress-bar-padding {
-                display: block !important;
-                background-color: ${config.progressPaddingColor} !important;
-                height: 100% !important;
-                width: 100% !important;
-                opacity: ${config.progressPaddingOpacity} !important;
-                position: absolute !important;
-                bottom: 0px !important;
-                z-index: 60 !important;
-            }
-        `;
-    }
-}
-
-// Функция для удаления стилей прогресс-бара
-function removeProgressPadding() {
-    // Удаляем атрибут для CSS
-    document.documentElement.removeAttribute('data-show-padding');
-    
-    const styleElement = document.getElementById('youtube-padding-style');
-    if (styleElement) {
-        styleElement.remove();
-    }
-    
-    // Сбрасываем стили для всех элементов
-    const paddingElements = document.querySelectorAll('.ytp-progress-bar-padding');
-    paddingElements.forEach(paddingElement => {
-        if (paddingElement) {
-            paddingElement.style = '';
-        }
-    });
-}
-
 // Удаление слушателей событий
 function removeListeners() {
     // Здесь можно отключить слушатели, если необходимо
@@ -239,9 +152,6 @@ function init() {
     }
 
     setupKeyboardControls();
-    if (config.enableGestures) {
-        setupGestureControls();
-    }
 }
 
 // Настройка клавиатурных сочетаний
@@ -252,89 +162,18 @@ function setupKeyboardControls() {
         switch(e.key) {
             case 'ArrowRight':
                 video.currentTime += config.skipTime;
-                if (config.enableSoundFeedback) {
-                    playFeedbackSound('forward');
-                }
                 break;
             case 'ArrowLeft':
                 video.currentTime -= config.skipTime;
-                if (config.enableSoundFeedback) {
-                    playFeedbackSound('backward');
-                }
                 break;
         }
     });
-}
-
-// Настройка жестов мыши
-function setupGestureControls() {
-    let lastClickTime = 0;
-    let clickX = 0;
-
-    document.addEventListener('click', (e) => {
-        if (!video || config.extensionEnabled === false) return;
-        
-        const currentTime = new Date().getTime();
-        const timeDiff = currentTime - lastClickTime;
-        
-        // Обработка двойного клика
-        if (timeDiff < 300) {
-            const rect = video.getBoundingClientRect();
-            const clickPosition = (e.clientX - rect.left) / rect.width;
-
-            if (clickPosition > 0.5) {
-                video.currentTime += config.skipTime;
-                playFeedbackSound('forward');
-            } else {
-                video.currentTime -= config.skipTime;
-                playFeedbackSound('backward');
-            }
-        }
-
-        lastClickTime = currentTime;
-        clickX = e.clientX;
-    });
-
-    // Обработка скролла для регулировки громкости
-    document.addEventListener('wheel', (e) => {
-        if (!video || config.extensionEnabled === false) return;
-        e.preventDefault();
-
-        const volumeChange = e.deltaY > 0 ? -0.1 : 0.1;
-        video.volume = Math.max(0, Math.min(1, video.volume + volumeChange));
-    }, { passive: false });
-}
-
-// Воспроизведение звукового сигнала
-function playFeedbackSound(type) {
-    if (!config.enableSoundFeedback) return;
-
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-
-    oscillator.type = 'sine';
-    oscillator.frequency.value = type === 'forward' ? 880 : 660;
-    
-    gainNode.gain.value = 0.1;
-    oscillator.start();
-    oscillator.stop(audioContext.currentTime + 0.1);
 }
 
 // Наблюдатель за изменениями DOM
 const observer = new MutationObserver((mutations) => {
     if (!document.querySelector('video')) {
         init();
-    }
-    
-    if (config.showProgressPadding && document.location.pathname.includes('/watch')) {
-        const paddingElements = document.querySelectorAll('.ytp-progress-bar-padding');
-        if (paddingElements.length > 0) {
-            setupProgressPadding();
-        }
     }
 });
 

@@ -1,117 +1,61 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <style>
-        body {
-            width: 300px;
-            padding: 15px;
-            font-family: Arial, sans-serif;
-        }
-        .setting {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        select, input[type="checkbox"], input[type="color"], input[type="range"] {
-            margin-top: 5px;
-        }
-        .title {
-            font-size: 18px;
-            margin-bottom: 15px;
-            color: #333;
-        }
-        .category {
-            font-size: 14px;
-            margin-top: 20px;
-            margin-bottom: 10px;
-            padding-top: 10px;
-            border-top: 1px solid #ddd;
-            color: #666;
-        }
-        .color-setting {
-            display: flex;
-            align-items: center;
-        }
-        .color-setting input[type="color"] {
-            margin-right: 10px;
-        }
-        .range-container {
-            display: flex;
-            align-items: center;
-        }
-        .range-container input[type="range"] {
-            flex-grow: 1;
-            margin-right: 10px;
-        }
-        .range-value {
-            width: 40px;
-            text-align: right;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Stream Mode</title>
+    <link rel="stylesheet" href="popup.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="live-storage.js" defer></script>
+    <script src="popup.js" defer></script>
 </head>
 <body>
-    <div class="title">YouTube Stream Mode</div>
-    
-    <div class="setting">
-        <label>
-            <input type="checkbox" id="extensionEnabled" checked>
-            Расширение включено
-        </label>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <img src="icons/icon48.png" alt="YouTube Stream Mode Logo">
+                <h1>YouTube Stream Mode</h1>
+            </div>
+        </header>
+        <main>
+            <div class="setting-card">
+                <div class="setting-toggle">
+                    <div class="setting-label">
+                        <span class="setting-title">Расширение</span>
+                        <span class="setting-status" id="extensionStatus">Включено</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="extensionEnabled" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="setting-card">
+                <div class="setting-title">
+                    Время перемотки
+                </div>
+                <div class="select-container">
+                    <select id="skipTime" class="custom-select">
+                        <option value="5">5 секунд</option>
+                        <option value="10">10 секунд</option>
+                        <option value="15">15 секунд</option>
+                        <option value="30">30 секунд</option>
+                        <option value="60">1 минута</option>
+                    </select>
+                    <span class="select-arrow">&#9662;</span>
+                </div>
+            </div>
+            
+            <div class="setting-info">
+                <span class="info-icon">i</span>
+                Скрывает длительность видео и прогресс-бар на YouTube для просмотра без спойлеров
+            </div>
+        </main>
+        
+        <footer>
+            <span class="status" id="statusMessage">Настройки сохраняются автоматически</span>
+        </footer>
     </div>
-    
-    <div class="setting">
-        <label for="skipTime">Время перемотки:</label>
-        <select id="skipTime">
-            <option value="5">5 секунд</option>
-            <option value="10">10 секунд</option>
-            <option value="30">30 секунд</option>
-        </select>
-    </div>
-
-    <div class="setting">
-        <label>
-            <input type="checkbox" id="enableSoundFeedback">
-            Звуковые сигналы
-        </label>
-    </div>
-
-    <div class="setting">
-        <label>
-            <input type="checkbox" id="enableGestures">
-            Жесты мышью
-        </label>
-    </div>
-    
-    <div class="category">Настройки прогресс-бара</div>
-    
-    <div class="setting">
-        <label>
-            <input type="checkbox" id="showProgressPadding">
-            Показывать заполнение прогресс-бара
-        </label>
-    </div>
-    
-    <div class="setting">
-        <label for="progressPaddingColor">Цвет заполнения:</label>
-        <div class="color-setting">
-            <input type="color" id="progressPaddingColor" value="#ff0000">
-            <span id="colorHexValue">#ff0000</span>
-        </div>
-    </div>
-    
-    <div class="setting">
-        <label for="progressPaddingOpacity">Прозрачность:</label>
-        <div class="range-container">
-            <input type="range" id="progressPaddingOpacity" min="0.1" max="1" step="0.1" value="0.7">
-            <span class="range-value" id="opacityValue">0.7</span>
-        </div>
-    </div>
-
-    <script src="live-storage.js"></script>
-    <script src="popup.js"></script>
 </body>
 </html> 
