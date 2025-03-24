@@ -1,13 +1,13 @@
 {
-  "manifest_version": 3,
   "name": "YouTube Stream Mode",
-  "description": "Скрывает длительность видео и прогресс-бар на YouTube для просмотра без спойлеров",
-  "version": "1.0",
+  "description": "Скрытие длительности и прогресс-бара на YouTube для просмотра без спойлеров",
+  "version": "1.0.0",
+  "manifest_version": 3,
   "permissions": [
-    "activeTab",
-    "scripting",
     "storage",
     "tabs",
+    "activeTab",
+    "scripting",
     "commands"
   ],
   "host_permissions": [
@@ -16,19 +16,16 @@
   "background": {
     "service_worker": "background.js"
   },
-  "content_scripts": [{
-    "matches": ["*://*.youtube.com/*"],
-    "css": ["styles.css"],
-    "js": ["live-storage.js", "content-script.js"]
-  }],
   "action": {
-    "default_icon": {
-      "16": "icons/icon16.png",
-      "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
-    },
     "default_popup": "popup.html"
   },
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "js": ["content-script.js"],
+      "css": ["styles.css"]
+    }
+  ],
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
@@ -41,7 +38,7 @@
   "commands": {
     "toggle-stream-mode": {
       "suggested_key": {
-        "default": "Ctrl+Shift+S"
+        "default": "Ctrl+Shift+Y"
       },
       "description": "Включить/выключить режим стрима"
     },
@@ -51,5 +48,9 @@
       },
       "description": "Показать/скрыть прогресс-бар"
     }
+  },
+  "options_ui": {
+    "page": "popup.html",
+    "open_in_tab": false
   }
 } 

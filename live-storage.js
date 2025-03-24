@@ -1,6 +1,6 @@
 /**
- * LiveStorage - обертка над chrome.storage для автоматической синхронизации 
- * данных между представлениями расширения
+ * LiveStorage - обёртка над chrome.storage для автоматической синхронизации 
+ * данных между частями расширения (popup, content-script и т.д.).
  */
 const LiveStorage = {
     local: {}, // Локальная копия данных
@@ -26,18 +26,17 @@ const LiveStorage = {
      */
     init: function() {
         console.log('LiveStorage: инициализация');
-        // Настраиваем прослушивание изменений из других компонентов
+        // Подписка на изменения в chrome.storage
         chrome.storage.onChanged.addListener((changes, area) => {
             if (area === 'local') {
                 console.log('LiveStorage: обнаружены изменения в хранилище', changes);
-                // Обновляем локальную копию данных
-                Object.keys(changes).forEach(key => {
-                    this.local[key] = changes[key].newValue;
-                });
+                for (const [key, { newValue }] of Object.entries(changes)) {
+                    this.local[key] = newValue;
+                }
             }
         });
 
-        // Создаем прокси-объект для автоматической синхронизации
+        // Прокси для автоматической записи в chrome.storage
         this.local = new Proxy(this.local, {
             set: (target, prop, value) => {
                 console.log(`LiveStorage: установка свойства ${prop} = ${value}`);

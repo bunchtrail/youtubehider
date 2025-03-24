@@ -13,28 +13,28 @@ function generateIcon(size) {
     // Внутренний круг
     ctx.fillStyle = '#FFFFFF';
     ctx.beginPath();
-    ctx.arc(size/2, size/2, size/3, 0, Math.PI * 2);
+    ctx.arc(size / 2, size / 2, size / 3, 0, Math.PI * 2);
     ctx.fill();
 
-    // Символ "S" для "Stream"
+    // Текст "S"
     ctx.fillStyle = '#4285F4';
-    ctx.font = `bold ${size/2}px Arial`;
+    ctx.font = `bold ${size / 2}px Arial`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('S', size/2, size/2);
+    ctx.fillText('S', size / 2, size / 2);
 
     return canvas;
 }
 
-// Создаем директорию для иконок, если её нет
+// Создаём директорию icons, если отсутствует
 if (!fs.existsSync('icons')) {
     fs.mkdirSync('icons');
 }
 
-// Генерируем иконки разных размеров
+// Генерируем набор иконок
 [16, 48, 128].forEach(size => {
     const canvas = generateIcon(size);
     const buffer = canvas.toBuffer('image/png');
     fs.writeFileSync(`icons/icon${size}.png`, buffer);
-    console.log(`Создана иконка размером ${size}x${size} пикселей`);
+    console.log(`Создана иконка размером ${size}x${size}`);
 }); 
